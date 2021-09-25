@@ -1,21 +1,24 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Switch } from 'react-native';
+import { useFonts } from 'expo-font';
+import Text from './src/components/text/text';
+import { ThemeProvider, useTheme } from './src/context/theme-context';
+import Root from './src/Root';
 
 export default function App() {
+  let [fontsLoaded] = useFonts({
+    'SpaceMono-Bold': require('./assets/fonts/SpaceMono-Bold.ttf'),
+    'SpaceMono-Regular': require('./assets/fonts/SpaceMono-Regular.ttf')
+  });
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator />;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider>
+      <Root />
+    </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
