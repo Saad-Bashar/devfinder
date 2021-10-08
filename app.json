@@ -4,7 +4,7 @@
     "slug": "devfinder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -27,6 +27,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "description": "Frontend mentor challenge.",
+    "githubUrl": "https://github.com/Saad-Bashar/devfinder"
   }
 }

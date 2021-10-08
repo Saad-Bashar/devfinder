@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { View, SafeAreaView, Switch, StatusBar, StyleSheet, Image, Pressable, LayoutAnimation, UIManager, Platform, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
 import Text from './components/text/text'
 import { useTheme } from './context/theme-context';
 import { commonColors, lightColors, spacing } from './theme';
 import { Octokit } from "@octokit/core";
+import { Transitioning, TransitioningView, Transition } from 'react-native-reanimated';
+
 
 const images = {
 	dark: {
@@ -55,7 +57,17 @@ export default function Root() {
 	const {setScheme, isDark, colors} = useTheme();
 	const [name, setName] = useState("");
 	const [data, setData] = useState(null);
-	const [loading, setLoading] = useState(false);   
+	const [loading, setLoading] = useState(false);
+	const ref = useRef(null);
+
+	const transition = (
+		<Transition.Sequence>
+		  <Transition.In type="fade" durationMs={300} />
+		  <Transition.Out type="fade" durationMs={300} />
+		</Transition.Sequence>
+	)
+
+	console.log("data ", data)
 	
 	const onSearch = async () => {
 		setLoading(true);
@@ -68,12 +80,16 @@ export default function Root() {
 			setLoading(false);
 			LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
 		} catch (err) {
+			console.error(err);
 			setLoading(false);
 		}
 		
 	}
 
 	const toggleScheme = () => {
+		if (ref.current) {
+			ref.current.animateNextTransition();
+		}
 		/*
 		* setScheme will change the state of the context
 		* thus will cause childrens inside the context provider to re-render
@@ -84,107 +100,114 @@ export default function Root() {
 	}
 
     return (
-        <SafeAreaView style={{flex: 1, backgroundColor: colors.outerBackground }}>
-            <View style={styles.header}>
-				<Text preset="h1">
-					devfinder
-				</Text>
+		<Transitioning.View style={{ flex: 1,  }} {...{ ref, transition }}>
+			{
+				isDark && <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: colors.outerBackground }} />
+			}
+			<SafeAreaView style={{flex: 1}}>
 				
-				<Pressable onPress={toggleScheme} style={styles.row}>
-					<Text>
-						{isDark ? "LIGHT": "DARK"}
+				<View style={styles.header}>
+					<Text preset="h1">
+						devfinder
 					</Text>
-						
-					<Image 
-						source={isDark ? require('../assets/002-sun.png') : require('../assets/moon.png') } 
-						style={{marginLeft: spacing[2]}}  
-					/>
-				</Pressable>
-			</View>
-			
-			<View style={[styles.searchView, {backgroundColor: colors.background}]}>
-				<Image source={require('../assets/search.png')} />
-
-				<TextInput
-					placeholder="Search GitHub Username…"
-					style={{ marginLeft: spacing[2], color: colors.text, flex: 1 }}
-					placeholderTextColor={colors.text}
-					onChangeText={(text) => setName(text)}
-					autoCorrect={false}
-				/>
-
-				<TouchableOpacity onPress={onSearch} style={styles.button}>
-					<Text textColor="white" style={{fontWeight: "700"}}>
-						Search
-					</Text>
-				</TouchableOpacity>
-			</View>
-			{
-				loading &&
-				<View style={{margin: spacing[4]}}>
-					<Text style={{ textAlign: "center" }}>Fetching...</Text>
-				</View>
-			}
-			{
-				data ? 
-				<View style={[styles.card, styles.content, {backgroundColor: colors.background}]}>
-					<View style={{ flexDirection: "row" }}>
-						<View style={styles.avatar}>
-							<Image 
-								style={{ height: 70, width: 70 }} 
-								resizeMode="contain" 
-								source={{ uri: data?.avatar_url }} 
-							/>
-						</View>
-
-						<View style={[{ marginLeft: spacing[4]}]}>
-							<Text preset="h2" textColor={isDark ? colors.text : "#2B3444"} style={{ textTransform: 'capitalize',}}>
-								{data?.name}
-							</Text>
-							<Text textColor={commonColors.blue}>
-								{`@${data.login}`}
-							</Text>
-							<Text preset="h4">
-								{`Joined ${formateDate(data.created_at)} `}
-							</Text>
-						</View>
-					</View>
-
-					<View style={{ marginVertical: spacing[5] }}>
+					
+					<Pressable onPress={toggleScheme} style={styles.row}>
 						<Text>
-							{data.bio ?? "Ut voluptate cillum sit sunt laborum Lorem tempor laboris. Irure non dolor dolor fugiat proident eiusmod aliqua commodo."}
+							{isDark ? "LIGHT": "DARK"}
 						</Text>
-					</View>
+							
+						<Image 
+							source={isDark ? require('../assets/002-sun.png') : require('../assets/moon.png') } 
+							style={{marginLeft: spacing[2]}}  
+						/>
+					</Pressable>
+				</View>
+				
+				<View style={[styles.searchView, {backgroundColor: colors.background}]}>
+					<Image source={require('../assets/search.png')} />
 
-					<View style={[styles.box, {backgroundColor: colors.outerBackground}]}>
-						<View style={styles.row}>
-							<View style={styles.boxItem}>
-								<Text preset="small">Repos</Text>
-								<Text style={[{marginTop: spacing[2], fontWeight: 'bold'}]}>{data.public_repos}</Text>
+					<TextInput
+						placeholder="Search GitHub Username…"
+						style={{ marginLeft: spacing[2], color: colors.text, flex: 1 }}
+						placeholderTextColor={colors.text}
+						onChangeText={(text) => setName(text)}
+						autoCorrect={false}
+					/>
+
+					<TouchableOpacity onPress={onSearch} style={styles.button}>
+						<Text textColor="white" style={{fontWeight: "700"}}>
+							Search
+						</Text>
+					</TouchableOpacity>
+				</View>
+				{
+					loading &&
+					<View style={{margin: spacing[4]}}>
+						<Text style={{ textAlign: "center" }}>Fetching...</Text>
+					</View>
+				}
+				{
+					data ? 
+					<View style={[styles.card, styles.content, {backgroundColor: colors.background}]}>
+						<View style={{ flexDirection: "row" }}>
+							<View style={styles.avatar}>
+								<Image 
+									style={{ height: 70, width: 70 }} 
+									resizeMode="contain" 
+									source={{ uri: data?.avatar_url }} 
+								/>
 							</View>
-							<View style={styles.boxItem}>
-								<Text preset="small">Followers</Text>
-								<Text style={[{marginTop: spacing[2]}]}>{data.followers}</Text>
-							</View>
-							<View style={styles.boxItem}>
-								<Text  preset="small">Following</Text>
-								<Text style={[{marginTop: spacing[2]}]}>{data.following}</Text>
+
+							<View style={[{ marginLeft: spacing[4]}]}>
+								<Text preset="h2" textColor={isDark ? colors.text : "#2B3444"} style={{ textTransform: 'capitalize',}}>
+									{data?.name}
+								</Text>
+								<Text textColor={commonColors.blue}>
+									{`@${data.login}`}
+								</Text>
+								<Text preset="h4">
+									{`Joined ${formateDate(data.created_at)} `}
+								</Text>
 							</View>
 						</View>
-					</View>
 
-					<View style={{marginVertical: spacing[6]}}>
-						<Row label={data.location} icon={isDark ? images.dark.pin : images.light.pin }/>
-						<Row label={data.blog} icon={isDark ? images.dark.url : images.light.url }/>
-						<Row label={data.twitter_username} icon={images.dark.twitter}/>
-						<Row label={data.company} icon={isDark ? images.dark.officeBuilding : images.light.officeBuilding } />
-					</View>
-				</View> : null
-			}
-			
+						<View style={{ marginVertical: spacing[5] }}>
+							<Text>
+								{data.bio ?? "Ut voluptate cillum sit sunt laborum Lorem tempor laboris. Irure non dolor dolor fugiat proident eiusmod aliqua commodo."}
+							</Text>
+						</View>
 
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        </SafeAreaView>
+						<View style={[styles.box, {backgroundColor: colors.outerBackground}]}>
+							<View style={styles.row}>
+								<View style={styles.boxItem}>
+									<Text preset="small">Repos</Text>
+									<Text style={[{marginTop: spacing[2], fontWeight: 'bold'}]}>{data.public_repos}</Text>
+								</View>
+								<View style={styles.boxItem}>
+									<Text preset="small">Followers</Text>
+									<Text style={[{marginTop: spacing[2]}]}>{data.followers}</Text>
+								</View>
+								<View style={styles.boxItem}>
+									<Text  preset="small">Following</Text>
+									<Text style={[{marginTop: spacing[2]}]}>{data.following}</Text>
+								</View>
+							</View>
+						</View>
+
+						<View style={{marginVertical: spacing[6]}}>
+							<Row label={data.location} icon={isDark ? images.dark.pin : images.light.pin }/>
+							<Row label={data.blog} icon={isDark ? images.dark.url : images.light.url }/>
+							<Row label={data.twitter_username} icon={images.dark.twitter}/>
+							<Row label={data.company} icon={isDark ? images.dark.officeBuilding : images.light.officeBuilding } />
+						</View>
+					</View> : null
+				}
+				
+
+				<StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+			</SafeAreaView>
+		</Transitioning.View>
+
     )
 }
 
